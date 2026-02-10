@@ -1,0 +1,1 @@
+{"_invocation_id": "503a94c1-a7d5-464a-808e-dde6e9b10f24", "linked": {"0": {"name": "source.trafficlens_dbt.trafficlens_bronze.telemetry", "type": "source", "succ": [1]}, "1": {"name": "model.trafficlens_dbt.stg_telemetry", "type": "model"}}}

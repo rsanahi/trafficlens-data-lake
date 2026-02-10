@@ -11,16 +11,20 @@ class ViofoOCRExtractor:
     by reading the burned-in caption text using OCR.
     """
 
-    def __init__(self, video_path, sample_interval=1.0, debug=False):
+    def __init__(self, video_path, sample_interval=1.0, debug=False, save_frames=False, frames_dir=None):
         """
         Args:
             video_path: Path to the video file.
             sample_interval: Process one frame every X seconds (default 1.0).
             debug: Create debug images of cropped areas.
+            save_frames: Whether to save the full frame as an image (Bronze Layer).
+            frames_dir: Directory to save frames to.
         """
         self.video_path = video_path
         self.sample_interval = sample_interval
         self.debug = debug
+        self.save_frames = save_frames
+        self.frames_dir = frames_dir
         
         # Regex for VIOFO caption formats
         # Observed: "012KM/H N:9.2985 W:75.3856 VIOFO A229 Pro HDR 28-01-2026 07:07:07"
@@ -62,12 +66,29 @@ class ViofoOCRExtractor:
         frame_idx = 0
         processed_count = 0
         
+        # Prepare frame output directory if needed
+        if self.save_frames and self.frames_dir:
+             if not os.path.exists(self.frames_dir):
+                 os.makedirs(self.frames_dir)
+             print(f"Saving frames to: {self.frames_dir}")
+        
         while True:
             cap.set(cv2.CAP_PROP_POS_FRAMES, frame_idx)
             ret, frame = cap.read()
             if not ret:
                 break
             
+            # Save frame if requested (Bronze Layer Artifact)
+            frame_filename = ""
+            if self.save_frames and self.frames_dir:
+                # Use frame index as temporary name, we can rename to timestamp later if extraction succeeds
+                # Or just use frame index which is unique
+                frame_name = f"frame_{frame_idx:06d}.jpg"
+                frame_path = os.path.join(self.frames_dir, frame_name)
+                # Quality 80 to save space
+                cv2.imwrite(frame_path, frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
+                frame_filename = frame_name
+
             # Crop the bottom 8% of the image (tightened based on user feedback)
             h, w = frame.shape[:2]
             crop_h = int(h * 0.08) # Bottom 8%
@@ -101,6 +122,9 @@ class ViofoOCRExtractor:
 
             data = self._parse_text(text)
             if data:
+                if self.save_frames:
+                    data['frame_filename'] = frame_filename
+                    
                 results.append(data)
                 if self.debug: 
                     print(f"  -> Parsed: {data}")
@@ -215,10 +239,24 @@ if __name__ == "__main__":
     parser.add_argument("--debug", action="store_true", help="Save debug images/logs")
     parser.add_argument("--output", help="Output file path (default: video_name.csv)")
     parser.add_argument("--format", choices=['csv', 'json'], default='csv', help="Output format")
+    parser.add_argument("--save-frames", action="store_true", help="Extract and save frames (Bronze Layer)")
     
     args = parser.parse_args()
     
-    extractor = ViofoOCRExtractor(args.video_path, sample_interval=args.interval, debug=args.debug)
+    # Logic for Bronze Layer structure if saving frames
+    frames_out_dir = None
+    if args.save_frames:
+         base_name = os.path.splitext(os.path.basename(args.video_path))[0]
+         # datalake/bronze/frames/{video_name}/
+         frames_out_dir = os.path.join("datalake", "bronze", "frames", base_name)
+    
+    extractor = ViofoOCRExtractor(
+        args.video_path, 
+        sample_interval=args.interval, 
+        debug=args.debug,
+        save_frames=args.save_frames,
+        frames_dir=frames_out_dir
+    )
     data = extractor.process_video()
     
     if data:
@@ -226,7 +264,12 @@ if __name__ == "__main__":
         if not args.output:
             base_name = os.path.splitext(os.path.basename(args.video_path))[0]
             extension = args.format
-            args.output = f"{base_name}.{extension}"
+            # Default to Bronze Telemetry folder if keeping with Data Lake structure
+            # datalake/bronze/telemetry/{video_name}.csv
+            output_dir = os.path.join("datalake", "bronze", "telemetry")
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+            args.output = os.path.join(output_dir, f"{base_name}.{extension}")
             
         extractor.save_to_file(data, args.output, args.format)
     else:

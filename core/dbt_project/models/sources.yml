@@ -1,0 +1,12 @@
+version: 2
+
+sources:
+  - name: trafficlens_bronze
+    schema: main
+    loader: viofo_ocr
+    tables:
+      - name: telemetry
+        description: "Raw telemetry data from VIOFO dashcam"
+        # DuckDB generic file reader: read all CSVs in the folder
+        meta:
+          external_location: "read_csv_auto('/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/bronze/telemetry/*.csv')"

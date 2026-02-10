@@ -1,0 +1,8 @@
+trafficlens_profile:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: 'trafficlens.duckdb'  # Local DuckDB file
+      extensions:
+        - parquet
