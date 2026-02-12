@@ -9,4 +9,4 @@ sources:
         description: "Raw telemetry data from VIOFO dashcam"
         # DuckDB generic file reader: read all CSVs in the folder
         meta:
-          external_location: "read_csv_auto('/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/bronze/telemetry/*.csv')"
+          external_location: "read_csv_auto('/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/bronze/telemetry/*.csv', filename=True, union_by_name=True)"

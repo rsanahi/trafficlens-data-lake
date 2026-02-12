@@ -1,6 +1,7 @@
 {{ config(
     materialized='external',
-    location='/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/silver/telemetry.parquet'
+    location='/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/silver/telemetry',
+    options={'partition_by': 'partition_date', 'overwrite_or_ignore': 'true'}
 ) }}
 
 /*
@@ -19,6 +20,9 @@ cleaned AS (
         -- Parse Timestamp (handling possible formats if CSV varies, but we assume ISO from viofo_ocr.py)
         TRY_CAST(timestamp AS TIMESTAMP) as event_time,
         
+        -- Partitioning Key
+        CAST(TRY_CAST(timestamp AS TIMESTAMP) AS DATE) as partition_date,
+        
         -- Geolocation
         CAST(latitude AS DOUBLE) as latitude,
         CAST(longitude AS DOUBLE) as longitude,
@@ -28,9 +32,14 @@ cleaned AS (
         
         -- Metadata
         raw_text,
-        frame_filename
+        frame_filename,
         
-    FROM source_data
+        -- Derived columns
+        -- Extract just the filename from the full path to avoid mismatches
+        -- Example: /path/to/2026_0114.csv -> 2026_0114.csv
+        scan.filename as source_file
+        
+    FROM source_data as scan
     WHERE latitude IS NOT NULL 
       AND longitude IS NOT NULL
 )
