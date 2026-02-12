@@ -1,1 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.venv/
+env/
+venv/
+
+# dbt
+core/dbt_project/target/
+core/dbt_project/dbt_packages/
+core/dbt_project/logs/
+*.duckdb
+*.duckdb.wal
+
+# Mac
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Data
 datalake/
