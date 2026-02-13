@@ -193,14 +193,14 @@ class ViofoOCRExtractor:
             if lon_match.group(1) == 'W': val = -val
             lon = val
 
-        # Only return if we have at least partial useful info
         if timestamp or (lat is not None and lon is not None) or speed > 0:
             return {
                 "timestamp": timestamp,
                 "speed_kmh": speed,
                 "latitude": lat,
                 "longitude": lon,
-                "raw_text": text
+                "raw_text": text,
+                "frame_filename": None # Placeholder, filled by caller
             }
         return None
 
