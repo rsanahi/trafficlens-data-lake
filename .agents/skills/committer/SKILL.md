@@ -5,66 +5,80 @@ description: Commit changes to git repository in a structured way
 
 # Committer Skill
 
-This skill provides a standard for creating git commits within the TrafficLens project. All changes must be committed using the **Conventional Commits** specification to ensure a clean and readable history.
+## ⚡ How to Use This Skill
 
-## Commit Message Format
+When asked to commit changes, **ALWAYS** use the `smart_commit.py` script instead of raw `git commit` commands. This enforces all commit rules automatically.
 
-Each commit message consists of a **header**, a **body**, and a **footer**.
+### Command
 
-```text
-<type>(<scope>): <description>
-
-[optional body]
-
-[optional footer(s)]
+```bash
+python .agents/skills/committer/scripts/smart_commit.py \
+  <type> <scope> "<description (max 50 chars)>" \
+  [--body "Extended body text"] \
+  file1.py file2.sql ...
 ```
 
-### 1. Header (Required)
-The header has a special format that includes a `type`, a `scope`, and a `description`.
+### Example Usage
 
-*   **Type**: Must be one of the following:
-    *   `feat`: A new feature
-    *   `fix`: A bug fix
-    *   `docs`: Documentation only changes
-    *   `style`: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
-    *   `refactor`: A code change that neither fixes a bug nor adds a feature
-    *   `perf`: A code change that improves performance
-    *   `test`: Adding missing tests or correcting existing tests
-    *   `chore`: Changes to the build process or auxiliary tools and libraries such as documentation generation
+```bash
+# Commit a new feature
+python .agents/skills/committer/scripts/smart_commit.py \
+  feat frontend "add trip filter to interactive map" \
+  --body "Added multiselect sidebar filter. Only trips with GPS data are shown." \
+  frontend/pages/1_Interactive_Map.py
 
-*   **Scope**: A phrase describing the section of the codebase affected (e.g., `core`, `frontend`, `dbt`, `ocr`).
-*   **Description**: A short summary of the code changes.
-    *   Use the imperative, present tense: "change" not "changed" nor "changes".
-    *   Don't capitalize the first letter.
-    *   No dot (.) at the end.
-
-### 2. Body (Optional)
-*   Just as in the **description**, use the imperative, present tense: "change" not "changed" nor "changes".
-*   The body should include the motivation for the change and contrast this with previous behavior.
-
-### 3. Footer (Optional)
-*   The footer should contain any information about **Breaking Changes** and is also the place to reference GitHub issues that this commit closes.
-*   **Breaking Changes** should start with the word `BREAKING CHANGE:` with a space or two newlines. The rest of the commit message is then used for this.
-
-## Examples
-
-**Feature**
-```text
-feat(frontend): add interactive map filters
-
-Added a sidebar filter to allow users to select specific dates and trips.
-Updated the PyDeck visualization to respect these filters.
+# Commit a bug fix
+python .agents/skills/committer/scripts/smart_commit.py \
+  fix dbt "normalize source_file to filename only" \
+  core/dbt_project/models/silver/stg_telemetry.sql
 ```
 
-**Bug Fix**
-```text
-fix(core): correct source_file mismatch in silver layer
+> **IMPORTANT**: The script will **reject** descriptions longer than 50 characters with an error. Fix the description before retrying.
 
-The source_file column included the full absolute path, causing joins with Gold layer to fail.
-Changed logic to extract only the filename.
+---
+
+## Commit Message Format Reference
+
+```text
+<type>(<scope>): <description>   ← max 50 chars
+
+[optional body - explain WHY, not WHAT]
+
+[optional footer - BREAKING CHANGE: or Closes #issue]
 ```
 
-**Documentation**
-```text
-docs(readme): update data lake architecture diagram
-```
+### Commit Types
+
+| Type       | When to use |
+|------------|-------------|
+| `feat`     | New feature |
+| `fix`      | Bug fix |
+| `docs`     | Documentation only |
+| `style`    | Formatting, no logic change |
+| `refactor` | Code change that is neither fix nor feature |
+| `perf`     | Performance improvement |
+| `test`     | Adding/fixing tests |
+| `chore`    | Build process, tooling |
+| `build`    | Build system changes |
+| `ci`       | CI/CD changes |
+
+### Description Rules
+
+- **Max 50 characters**
+- Imperative tense: `"add"`, not `"added"` or `"adds"`
+- No capital first letter
+- No period at the end
+
+### Scope Reference (TrafficLens)
+
+| Scope      | Files |
+|------------|-------|
+| `core`     | `core/*.py` |
+| `ocr`      | `core/viofo_ocr.py` |
+| `ingest`   | `core/batch_ingest.py` |
+| `dbt`      | `core/dbt_project/` |
+| `frontend` | `frontend/` |
+| `gold`     | `core/dbt_project/models/gold/` |
+| `silver`   | `core/dbt_project/models/silver/` |
+| `repo`     | `.gitignore`, `README.md` |
+| `skills`   | `.agents/` |
