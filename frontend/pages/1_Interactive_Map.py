@@ -173,12 +173,18 @@ if not filtered_df.empty:
         "style": {"backgroundColor": "steelblue", "color": "white"}
     }
 
-    view_state = pdk.ViewState(
-        latitude=filtered_df["latitude"].mean(),
-        longitude=filtered_df["longitude"].mean(),
-        zoom=13,
-        pitch=0,
-    )
+    # Store view state in session state to prevent zooming out on click/rerun
+    current_filters = f"{selected_date}_{selected_trips}"
+    if "map_filters" not in st.session_state or st.session_state.map_filters != current_filters:
+        st.session_state.view_state = pdk.ViewState(
+            latitude=filtered_df["latitude"].mean(),
+            longitude=filtered_df["longitude"].mean(),
+            zoom=13,
+            pitch=0,
+        )
+        st.session_state.map_filters = current_filters
+
+    view_state = st.session_state.view_state
 
     try:
         # Determine map style
