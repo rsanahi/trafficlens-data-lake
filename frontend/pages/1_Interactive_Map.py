@@ -160,14 +160,15 @@ if not filtered_df.empty:
         get_color=get_color_logic, 
         get_radius=3, # Smaller radius (3 meters)
         pickable=True,
+        auto_highlight=True,
         opacity=0.8,
         filled=True,
-        radius_min_pixels=1,
-        radius_max_pixels=5,
+        radius_min_pixels=2,
+        radius_max_pixels=6,
     )
     
     tooltip = {
-        "html": "<b>Time:</b> {event_time}<br/><b>Speed:</b> {speed_kmh} km/h",
+        "html": "<b>Trip:</b> {source_file}<br/><b>Time:</b> {event_time}<br/><b>Speed:</b> {speed_kmh} km/h",
         "style": {"backgroundColor": "steelblue", "color": "white"}
     }
 
