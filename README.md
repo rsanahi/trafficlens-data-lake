@@ -71,7 +71,7 @@ datalake/                 # Local storage (simulates AWS S3)
 conda activate datalake
 
 # 2. Install dependencies
-pip install pydantic opencv-python-headless pytesseract dbt-duckdb streamlit pydeck duckdb pandas
+pip install pydantic opencv-python-headless pytesseract dbt-duckdb streamlit pydeck duckdb pandas plotly
 ```
 
 ---

@@ -156,6 +156,7 @@ if not filtered_df.empty:
     layer = pdk.Layer(
         "ScatterplotLayer",
         filtered_df,
+        id="trip_scatter",
         get_position=["longitude", "latitude"],
         get_color=get_color_logic, 
         get_radius=3, # Smaller radius (3 meters)
@@ -191,7 +192,17 @@ if not filtered_df.empty:
             tooltip=tooltip,
             map_style=style_uri
         )
-        st.pydeck_chart(r)
+        
+        event = st.pydeck_chart(r, on_select="rerun", selection_mode="single-object")
+        
+        # Extract selection from our named layer
+        selected_points = event.selection.objects.get("trip_scatter", []) if hasattr(event, "selection") else []
+        if selected_points:
+            trip_path = selected_points[0].get("source_file")
+            if trip_path:
+                st.success("🎯 You selected a Trip! Click the copy icon below to copy its path:")
+                st.code(trip_path, language="text")
+                
     except Exception as e:
         st.error(f"Error rendering map: {e}.")
         
