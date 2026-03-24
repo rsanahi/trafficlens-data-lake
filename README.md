@@ -49,31 +49,30 @@ datalake/                 # Local storage (simulates AWS S3)
 ```mermaid
 flowchart TD
     subgraph Source
-        V["VIOFO A229 Pro (.mp4)"]
+        V[VIOFO A229 Pro .mp4]
     end
 
-    subgraph Bronze["🥉 Bronze Layer (Raw)"]
-        direction TB
-        CSV["telemetry/*.csv"]
-        IMG["frames/*.jpg"]
+    subgraph Bronze_Layer [🥉 Bronze Layer Raw]
+        CSV[telemetry/*.csv]
+        IMG[frames/*.jpg]
     end
 
-    subgraph Silver["🥈 Silver Layer (Cleaned)"]
-        Parquet1["silver/telemetry/*.parquet"]
+    subgraph Silver_Layer [🥈 Silver Layer Cleaned]
+        Parquet1[silver/telemetry/*.parquet]
     end
 
-    subgraph Gold["🥇 Gold Layer (Aggregates)"]
-        Parquet2["dim_trips.parquet"]
-        Parquet3["ml_training_catalog.parquet"]
+    subgraph Gold_Layer [🥇 Gold Layer Aggregates]
+        Parquet2[dim_trips.parquet]
+        Parquet3[ml_training_catalog.parquet]
     end
 
-    V -- "OcrVideoReader (Python)" --> CSV
-    V -- "OcrVideoReader (Python)" --> IMG
+    V -->|OcrVideoReader| CSV
+    V -->|OcrVideoReader| IMG
     
-    CSV -- "dbt + DuckDB" --> Parquet1
+    CSV -->|dbt + DuckDB| Parquet1
     
-    Parquet1 -- "dbt + DuckDB" --> Parquet2
-    Parquet1 -- "dbt + DuckDB" --> Parquet3
+    Parquet1 -->|dbt + DuckDB| Parquet2
+    Parquet1 -->|dbt + DuckDB| Parquet3
 
     classDef source fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
     classDef bronze fill:#cd7f32,stroke:#5c3a21,stroke-width:2px,color:#fff;
