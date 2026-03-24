@@ -46,60 +46,9 @@ datalake/                 # Local storage (simulates AWS S3)
 
 ## Data Lake Layers
 
-```mermaid
-flowchart TD
-    subgraph Source
-        V[VIOFO A229 Pro .mp4]
-    end
+The detailed documentation of the pipeline layers (Bronze ➜ Silver ➜ Gold) along with the **Architectural Flow Diagrams** has been moved to an interactive Jupyter Notebook to ensure perfect and interactive rendering.
 
-    subgraph Bronze_Layer [🥉 Bronze Layer Raw]
-        CSV[telemetry/*.csv]
-        IMG[frames/*.jpg]
-    end
-
-    subgraph Silver_Layer [🥈 Silver Layer Cleaned]
-        Parquet1[silver/telemetry/*.parquet]
-    end
-
-    subgraph Gold_Layer [🥇 Gold Layer Aggregates]
-        Parquet2[dim_trips.parquet]
-        Parquet3[ml_training_catalog.parquet]
-    end
-
-    V -->|OcrVideoReader| CSV
-    V -->|OcrVideoReader| IMG
-    
-    CSV -->|dbt + DuckDB| Parquet1
-    
-    Parquet1 -->|dbt + DuckDB| Parquet2
-    Parquet1 -->|dbt + DuckDB| Parquet3
-
-    classDef source fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
-    classDef bronze fill:#cd7f32,stroke:#5c3a21,stroke-width:2px,color:#fff;
-    classDef silver fill:#c0c0c0,stroke:#696969,stroke-width:2px,color:#000;
-    classDef gold fill:#ffd700,stroke:#b8860b,stroke-width:2px,color:#000;
-
-    class V source;
-    class CSV,IMG bronze;
-    class Parquet1 silver;
-    class Parquet2,Parquet3 gold;
-```
-
-### 🥉 Bronze — Raw Ingestion
-- **Source**: VIOFO A229 Pro `.mp4` dashcam videos.
-- **Process**: OCR extraction via `OcrVideoReader` (OpenCV + Tesseract).
-- **Output**:
-  - `datalake/bronze/telemetry/{video}.csv` — frame-by-frame telemetry.
-  - `datalake/bronze/frames/{video}/*.jpg` — extracted frames at 1 FPS.
-
-### 🥈 Silver — Cleaned & Typed
-- **Process**: dbt + DuckDB (`stg_telemetry.sql`).
-- **Output**: `datalake/silver/telemetry/partition_date=YYYY-MM-DD/*.parquet`
-  - Timestamps → `DATETIME`, coordinates → `DOUBLE`, nulls removed.
-
-### 🥇 Gold — Business Aggregates
-- **`dim_trips.parquet`**: Trip summary (`trip_id`, `start_time`, `duration`, `avg_speed`, `distance_km`).
-- **`ml_training_catalog.parquet`**: High-quality frames for ML training (`speed > 5 km/h`).
+👉 **[View the Architecture Notebook & Diagrams](docs/architecture.ipynb)**
 
 ---
 
