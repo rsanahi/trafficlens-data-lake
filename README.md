@@ -1,108 +1,97 @@
-# TrafficLens Data Lake 🚦
+# TrafficLens: Serverless Data Lake & Object Detection 🚦
 
-Scalable Video Ingestion and Analytics Architecture for Dashcam Footage on AWS.
+![TrafficLens Dashboard](https://img.shields.io/badge/Architecture-Medallion%20Data%20Lake-blue)
+![Python](https://img.shields.io/badge/Python-3.12-blue)
+![AWS](https://img.shields.io/badge/AWS-Cloud%20Native-orange)
+![dbt](https://img.shields.io/badge/dbt-DuckDB-F66?logo=dbt)
 
-TrafficLens transforms raw dashcam video into actionable data (GPS tracks, speed, trips) using a Modern Data Stack approach (Python, dbt, DuckDB, Parquet, Streamlit).
+**TrafficLens** is an end-to-end Data Engineering and Machine Learning Data Lake designed to ingest, process, and analyze raw dashcam footage at scale. It demonstrates a sophisticated understanding of the **Modern Data Stack** and **AWS Cloud Architecture**.
+
+By seamlessly bridging the gap between Computer Vision (YOLOv8) and Analytical Engineering (dbt), TrafficLens transforms unstructured video bytes into queryable, curated Parquet datasets visualizing traffic congestion and trip history on an interactive dashboard.
 
 ---
 
-## Architecture
+## 🧠 Project Philosophy & Engineering Highlights
 
-### Domain-Driven Design (DDD) Layers
+This project was built from the ground up to showcase production-grade Data Engineering best practices:
 
+*   **Cloud-Native & Serverless Architecture:** Designed with AWS Serverless principles in mind. Storage and compute are strictly decoupled, treating Amazon S3 (simulated locally via the `datalake/` directory) as the single source of truth, and query engines (DuckDB/Amazon Athena) for transformation.
+*   **Medallion Data Lake:** Data is aggressively modeled into **Bronze** (Raw CSVs & Images), **Staging** (Cleaned, Typed, Deduplicated), and **Curated** (Star Schema Business Aggregates).
+*   **Domain-Driven Design (DDD) & Clean Architecture:** The python ingestion pipeline is built using strict DDD. Business logic (Domain) is isolated from external dependencies (Infrastructure) via Interface Ports. This means swapping local YOLO detection for **AWS Rekognition** or **Amazon SageMaker** requires zero changes to the core application logic.
+*   **Infrastructure as Code (IaC):** AWS infrastructure provisioning is handled structurally through **AWS CDK** (Python) located in the `infra/` stack.
+*   **Test-Driven Development (TDD):** The core pipeline behavior is validated through a suite of robust unit tests prioritizing dependency injection and in-memory fakes.
+
+---
+
+## 🏛️ Project Structure
+
+The repository is structured to prioritize separation of concerns, ensuring scalability and maintainability:
+
+```text
+trafficlens-data-lake/
+├── core/
+│   ├── domain/               # Core entities, Value Objects, & Port Interfaces (DDD)
+│   ├── application/          # TDD-driven Use Cases (ExtractTelemetry, VehicleCounts)
+│   ├── infrastructure/       # Concrete Adapters (LocalYoloDetector, OcrVideoReader)
+│   ├── dbt_project/          # SQL transformations (dbt + duckdb)
+│   │   ├── models/           # src/, stg/, and marts/
+│   │   └── dbt_project.yml
+│   └── batch_ingest.py       # Main presentation/ingestion CLI orchestration
+├── frontend/                 # Premium Streamlit UI & PyDeck Interactive Map
+├── infra/                    # AWS CDK (Infrastructure as Code) definitions
+├── docs/                     # Interactive Architecture documentation & diagrams
+├── scripts/                  # Helper & debugging data generation scripts
+├── tests/                    # Robust test suite covering Domain & Application layers
+└── datalake/                 # Local simulated S3 Storage (Bronze, Staging, Curated)
 ```
-core/
-├── domain/               # Entities & Value Objects (no external deps)
-│   ├── telemetry_record.py   # TelemetryRecord (Pydantic)
-│   ├── video_metadata.py     # VideoMetadata (Pydantic, frozen)
-│   └── ports.py              # VideoReaderPort, TelemetryRepositoryPort (ABCs)
-│
-├── application/          # Use Cases (orchestration, no infra imports)
-│   └── extract_telemetry.py  # ExtractTelemetryUseCase
-│
-├── infrastructure/       # Adapters (external tools sit here)
-│   ├── ocr_video_reader.py       # OpenCV + Tesseract adapter
-│   └── csv_telemetry_repository.py # CSV persistence adapter
-│
-├── dbt_project/          # SQL transformations (Silver & Gold layers)
-│   └── models/
-│       ├── silver/stg_telemetry.sql
-│       └── gold/{dim_trips, ml_training_catalog}.sql
-│
-└── batch_ingest.py       # CLI entry point (Presentation layer)
-
-frontend/                 # Streamlit dashboard
-tests/
-├── domain/               # Pure domain tests (no mocks needed)
-├── application/          # Use case tests (in-memory fakes)
-└── infrastructure/       # OCR parser logic tests
-datalake/                 # Local storage (simulates AWS S3)
-├── bronze/               # Raw CSVs + frames
-├── silver/               # Partitioned Parquet (by date)
-└── gold/                 # Business aggregates Parquet
-```
 
 ---
 
-## Data Lake Layers
+## 📚 Deep-Dive Architecture Documentation
 
-The detailed documentation of the pipeline layers (Bronze ➜ Silver ➜ Gold) along with the **Architectural Flow Diagrams** has been moved to an interactive Jupyter Notebook to ensure perfect and interactive rendering.
+The complete architectural breakdown, including the pipeline Data Flow (Bronze ➜ Staging ➜ Curated), Visual DAG Diagrams, and OCR extraction examples, has been extensively documented in an Interactive Jupyter Notebook. 
 
-👉 **[View the Architecture Notebook & Diagrams](docs/architecture.ipynb)**
+👉 **[View the Architectural Data Flow Notebook](docs/architecture.ipynb)**
 
 ---
 
-## 🚀 Setup
+## 🚀 Quick Start Guide
+
+### 1. Environment Setup
 
 ```bash
 # 1. Create and activate conda environment
+conda create -n datalake python=3.12
 conda activate datalake
 
 # 2. Install dependencies
-pip install pydantic opencv-python-headless pytesseract dbt-duckdb streamlit pydeck duckdb pandas plotly
+pip install -r infra/requirements.txt
+pip install pydantic opencv-python-headless pytesseract dbt-duckdb streamlit pydeck duckdb pandas plotly ultralytics
 ```
 
----
+### 2. Running the Data Pipeline (Ingestion -> dbt)
 
-## ▶️ Running the Pipeline
-
-### Ingest videos → Bronze → Silver → Gold
 ```bash
-# Run from project root with conda env active
-python core/batch_ingest.py /Volumes/External/dashcam/
+# Run the Computer Vision extraction from raw videos to Bronze
+python core/batch_ingest.py /absolute/path/to/dashcam/videos/
 
-# Dry-run to preview files without processing
-python core/batch_ingest.py /Volumes/External/dashcam/ --dry-run
-```
-
-### Run dbt transformations manually
-```bash
+# Run the dbt ELT pipeline to process Bronze -> Staging -> Curated
 cd core/dbt_project
 dbt run --profiles-dir .
 ```
 
-### Launch the Streamlit dashboard
+### 3. Launching the TrafficLens Dashboard
+
+Visualize the final Object Detections and Trip metrics dynamically:
+
 ```bash
 streamlit run frontend/app.py
 ```
 
----
+### 4. Running the Test Suite
 
-## 🧪 Tests
+Execute the TDD suite covering the Domain and Application architectures:
 
 ```bash
-# Run full test suite (conda datalake env)
-/opt/anaconda3/envs/datalake/bin/python -m pytest tests/ -v
-
-# Or with env active
-conda activate datalake
 python -m pytest tests/ -v
 ```
-
-**Test coverage:**
-| Layer | Tests |
-|---|---|
-| Domain (`TelemetryRecord`, `VideoMetadata`) | 10 |
-| Application (`ExtractTelemetryUseCase`) | 3 |
-| Infrastructure (`OcrVideoReader` parser) | 7 |
-| **Total** | **20** |
