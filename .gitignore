@@ -22,3 +22,6 @@ core/dbt_project/logs/
 
 # Data
 datalake/
+
+# Models
+*.pt

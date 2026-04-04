@@ -1,0 +1,17 @@
+version: 2
+
+models:
+  - name: stg_detections
+    description: "Staging model for mock object detections. Cleans columns and sets data types."
+    columns:
+      - name: frame_id
+        description: "Unique frame identifier. Used to join with telemetry."
+        tests:
+          - unique
+          - not_null
+      - name: car_count
+        description: "Number of cars detected in the frame."
+      - name: motorcycle_count
+        description: "Number of motorcycles detected in the frame."
+      - name: source_file
+        description: "Original detection CSV filename."

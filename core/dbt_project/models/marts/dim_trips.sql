@@ -1,7 +1,7 @@
 
 {{ config(
     materialized='external',
-    location='/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/gold/dim_trips.parquet'
+    location='/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/curated/dim_trips.parquet'
 ) }}
 
 /*

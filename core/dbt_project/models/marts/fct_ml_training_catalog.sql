@@ -1,7 +1,7 @@
 
 {{ config(
     materialized='external',
-    location='/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/gold/ml_training_catalog.parquet'
+    location='/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/curated/fct_ml_training_catalog.parquet'
 ) }}
 
 /*
@@ -18,7 +18,8 @@ WITH silver_telemetry AS (
 candidates AS (
     SELECT
         event_time,
-        frame_filename,
+        frame_id,
+        video_id,
         latitude,
         longitude,
         speed_kmh,
@@ -29,6 +30,7 @@ candidates AS (
         frame_filename IS NOT NULL 
         AND frame_filename != ''
         AND speed_kmh > 5.0  -- Filter for movement
+    QUALIFY ROW_NUMBER() OVER (PARTITION BY frame_id ORDER BY event_time) = 1
 )
 
 SELECT * FROM candidates

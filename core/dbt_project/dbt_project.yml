@@ -18,9 +18,9 @@ clean-targets:
 
 models:
   trafficlens_dbt:
-    silver:
-      +materialized: table
+    stg:
+      +materialized: external
       +file_format: parquet
-    gold:
-      +materialized: table
+    marts:
+      +materialized: external
       +file_format: parquet

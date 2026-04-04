@@ -9,9 +9,12 @@ import os
 import subprocess
 
 from core.application.extract_telemetry import ExtractTelemetryUseCase
+from core.application.extract_vehicle_counts import ExtractVehicleCountsUseCase
 from core.domain.video_metadata import VideoMetadata
 from core.infrastructure.csv_telemetry_repository import CsvTelemetryRepository
+from core.infrastructure.csv_detection_repository import CsvDetectionRepository
 from core.infrastructure.ocr_video_reader import OcrVideoReader
+from core.infrastructure.local_yolo_detector import LocalYoloDetector
 
 
 def _discover_videos(input_dir: str) -> list[str]:
@@ -29,7 +32,12 @@ def ingest_directory(input_dir: str, bronze_base: str, dry_run: bool = False) ->
     video_files = _discover_videos(input_dir)
     print(f"Found {len(video_files)} videos in {input_dir}")
 
-    repository = CsvTelemetryRepository()
+    telemetry_repo = CsvTelemetryRepository()
+    
+    # Lazily instantiate YOLO so it doesn't load into RAM if we just run dbt or dry_run
+    detector = None
+    detection_repo = None
+    counts_use_case = None
 
     for video_path in video_files:
         filename = os.path.basename(video_path)
@@ -37,25 +45,39 @@ def ingest_directory(input_dir: str, bronze_base: str, dry_run: bool = False) ->
 
         frames_dir = os.path.join(bronze_base, "frames")
         telemetry_path = os.path.join(bronze_base, "telemetry", f"{base_name}.csv")
+        video_frames_dir = os.path.join(frames_dir, base_name)
 
-        if repository.exists(telemetry_path):
-            print(f"Skipping {filename} — already processed.")
-            continue
-
-        print(f"Processing {filename}...")
-        if dry_run:
-            continue
-
-        reader = OcrVideoReader(save_frames=True, frames_base_dir=frames_dir)
-        use_case = ExtractTelemetryUseCase(reader=reader, repository=repository)
-
-        try:
-            use_case.execute(
-                metadata=VideoMetadata(path=video_path),
-                output_path=telemetry_path,
-            )
-        except Exception as e:
-            print(f"Error processing {filename}: {e}")
+        # 1. Telemetry Extraction
+        if not telemetry_repo.exists(telemetry_path):
+            print(f"Processing telemetry for {filename}...")
+            if not dry_run:
+                reader = OcrVideoReader(save_frames=True, frames_base_dir=frames_dir)
+                use_case = ExtractTelemetryUseCase(reader=reader, repository=telemetry_repo)
+                try:
+                    use_case.execute(
+                        metadata=VideoMetadata(path=video_path),
+                        output_path=telemetry_path,
+                    )
+                except Exception as e:
+                    print(f"Error processing {filename}: {e}")
+                    continue
+        else:
+            print(f"Skipping telemetry for {filename} — already processed.")
+            
+        # 2. Vehicle Counts (YOLO)
+        if detection_repo is None and not dry_run:
+            detector = LocalYoloDetector()
+            detection_repo = CsvDetectionRepository(base_path=os.path.join(bronze_base, "detections"))
+            counts_use_case = ExtractVehicleCountsUseCase(detector, detection_repo)
+        
+        if not dry_run and not detection_repo.exists(base_name):
+            print(f"Counting vehicles for {filename} using YOLO...")
+            try:
+                counts_use_case.execute(video_id=base_name, frames_dir=video_frames_dir)
+            except Exception as e:
+                print(f"Error counting vehicles for {filename}: {e}")
+        elif not dry_run:
+             print(f"Skipping vehicle counts for {filename} — already processed.")
 
 
 def _run_dbt(project_dir: str) -> None:

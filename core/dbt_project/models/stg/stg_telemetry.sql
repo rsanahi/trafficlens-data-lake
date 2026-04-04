@@ -1,6 +1,6 @@
 {{ config(
     materialized='external',
-    location='/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/silver/telemetry',
+    location='/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/staging/telemetry',
     options={'partition_by': 'partition_date', 'overwrite_or_ignore': 'true'}
 ) }}
 
@@ -36,8 +36,13 @@ cleaned AS (
         
         -- Derived columns
         -- Extract just the filename from the full path to avoid mismatches
-        -- Example: /path/to/2026_0114.csv -> 2026_0114.csv
-        scan.filename as source_file
+        scan.filename as source_file,
+        
+        -- Extract video_id (basename without extension)
+        regexp_extract(scan.filename, '([^/]+)\.csv$', 1) as video_id,
+        
+        -- Globally unique frame identifier
+        regexp_extract(scan.filename, '([^/]+)\.csv$', 1) || '_' || frame_filename as frame_id
         
     FROM source_data as scan
     WHERE latitude IS NOT NULL 
