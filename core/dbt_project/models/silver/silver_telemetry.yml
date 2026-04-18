@@ -1,0 +1,18 @@
+version: 2
+
+models:
+  - name: silver_telemetry
+    description: "Staging model for telemetry. Deduplicates, casts data types, and adds partitions."
+    columns:
+      - name: source_file
+        description: "Source video CSV filename. Extracted from the physical file path."
+      - name: event_time
+        description: "The timestamp of the telemetry event."
+      - name: partition_date
+        description: "Virtual partition column based on event_time."
+      - name: latitude
+        description: "GPS Latitude."
+      - name: longitude
+        description: "GPS Longitude."
+      - name: speed_kmh
+        description: "Calculated speed in km/h based on OCR."

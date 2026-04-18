@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: fct_trips
+    description: "Trip Dimension data mart. Aggregates telemetry by source video file."
+    columns:
+      - name: trip_id
+        description: "Primary key for the trip. Currently derived from the source video filename."
+        tests:
+          - unique
+          - not_null
+      - name: start_time
+        description: "The start time of the trip."
+      - name: end_time
+        description: "The end time of the trip."
+      - name: duration_seconds
+        description: "Duration of the trip in seconds."
+      - name: avg_speed_kmh
+        description: "Average speed during the trip."
+
+  - name: fct_ml_training_catalog
+    description: "Fact table containing frames suitable for Object Detection ML training."
+    columns:
+      - name: frame_id
+        description: "The unique ID of the extracted frame image. Acts as the primary identifier."
+        tests:
+          - unique
+          - not_null
+      - name: speed_kmh
+        description: "Speed at the time of the frame, must be > 5.0 to represent a moving vehicle."
+
+  - name: fct_vehicle_counts
+    description: "Fact table combining frame object detections with spatial-temporal telemetry."
+    columns:
+      - name: frame_id
+        description: "Primary key. Unique frame identifier corresponding to the counts."
+        tests:
+          - unique
+          - not_null
+      - name: event_time
+        description: "Timestamp of this frame."
+      - name: car_count
+        description: "Total cars detected."
+      - name: motorcycle_count
+        description: "Total motorcycles detected."
+      - name: total_vehicles
+        description: "Calculated sum of all detected vehicles in this frame."
