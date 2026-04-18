@@ -55,7 +55,7 @@ def ingest_directory(input_dir: str, bronze_base: str, dry_run: bool = False) ->
                 use_case = ExtractTelemetryUseCase(reader=reader, repository=telemetry_repo)
                 try:
                     use_case.execute(
-                        metadata=VideoMetadata(path=video_path),
+                        metadata=VideoMetadata(path=video_path, sample_interval=0.2),
                         output_path=telemetry_path,
                     )
                 except Exception as e:

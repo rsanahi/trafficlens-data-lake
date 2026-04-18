@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: dim_trips
+  - name: fct_trips
     description: "Trip Dimension data mart. Aggregates telemetry by source video file."
     columns:
       - name: trip_id

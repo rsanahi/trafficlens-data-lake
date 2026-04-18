@@ -1,7 +1,7 @@
 version: 2
 
 models:
-  - name: stg_telemetry
+  - name: silver_telemetry
     description: "Staging model for telemetry. Deduplicates, casts data types, and adds partitions."
     columns:
       - name: source_file

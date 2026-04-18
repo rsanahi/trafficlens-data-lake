@@ -11,7 +11,7 @@
 */
 
 WITH silver_telemetry AS (
-    SELECT * FROM {{ ref('stg_telemetry') }}
+    SELECT * FROM {{ ref('silver_telemetry') }}
 ),
 
 trip_stats AS (

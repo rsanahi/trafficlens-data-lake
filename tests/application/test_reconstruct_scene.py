@@ -41,10 +41,16 @@ class FakeSfMMapper(SfMMapperPort):
 
     def __init__(self, num_poses: int = 15):
         self.num_poses = num_poses
-        self.called_with: list[str] = []
+        self.called_with_paths: list[str] = []
+        self.called_with_telemetry: list["TelemetryRecord"] | None = None
 
-    def map_poses(self, frame_paths: list[str]) -> list[CameraPose]:
-        self.called_with = frame_paths
+    def map_poses(
+        self,
+        frame_paths: list[str],
+        telemetry: list["TelemetryRecord"] | None = None,
+    ) -> list[CameraPose]:
+        self.called_with_paths = frame_paths
+        self.called_with_telemetry = telemetry
         return [_make_pose(i) for i in range(self.num_poses)]
 
 
@@ -113,18 +119,26 @@ class TestReconstructSceneUseCase:
         assert scene.num_gaussians == 200_000
         assert len(scene.camera_poses) == 15
 
-    def test_sfm_mapper_receives_frame_paths(self):
-        """The use case must forward all frame_paths to the SfM mapper unchanged."""
+    def test_sfm_mapper_receives_frame_paths_and_telemetry(self):
+        """The use case must forward frame_paths and telemetry to the SfM mapper unchanged."""
         mapper = FakeSfMMapper(num_poses=12)
         use_case = ReconstructSceneUseCase(
             sfm_mapper=mapper,
             gaussian_trainer=FakeGaussianTrainer(),
             inference_contract=self._default_contract(),
         )
-        frame_paths = ["a.jpg", "b.jpg", "c.jpg"]
+        frame_paths = ["a.jpg", "b.jpg"]
+        
+        # Test 1: Without telemetry
         use_case.execute(frame_paths=frame_paths, scene_id="scene_002")
-
-        assert mapper.called_with == frame_paths
+        assert mapper.called_with_paths == frame_paths
+        assert mapper.called_with_telemetry is None
+        
+        # Test 2: With telemetry
+        from core.domain.telemetry_record import TelemetryRecord
+        fake_telemetry = [TelemetryRecord(raw_text="fake", latitude=0.0, longitude=0.0)]
+        use_case.execute(frame_paths=frame_paths, scene_id="scene_003", telemetry=fake_telemetry)
+        assert mapper.called_with_telemetry == fake_telemetry
 
     def test_gaussian_trainer_receives_correct_scene_id(self):
         """The trainer must receive the scene_id the caller specified."""

@@ -1,6 +1,6 @@
 {{ config(
     materialized='external',
-    location='/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/staging/telemetry',
+    location='{{ var("datalake_path") }}/datalake/silver/telemetry',
     options={'partition_by': 'partition_date', 'overwrite_or_ignore': 'true'}
 ) }}
 

@@ -1,6 +1,6 @@
 {{ config(
     materialized='external',
-    location='/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/curated/fct_vehicle_counts.parquet'
+    location='{{ var("datalake_path") }}/datalake/gold/fct_vehicle_counts.parquet'
 ) }}
 
 /*
@@ -11,12 +11,12 @@
 
 WITH telemetry_base AS (
     -- We want only one telemetry point per frame, because OCR provides detections per frame
-    SELECT * FROM {{ ref('stg_telemetry') }}
+    SELECT * FROM {{ ref('silver_telemetry') }}
     QUALIFY ROW_NUMBER() OVER (PARTITION BY frame_id ORDER BY event_time) = 1
 ),
 
 detections AS (
-    SELECT * FROM {{ ref('stg_detections') }}
+    SELECT * FROM {{ ref('silver_detections') }}
 ),
 
 joined_counts AS (

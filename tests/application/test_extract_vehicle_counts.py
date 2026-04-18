@@ -28,6 +28,9 @@ class FakeVehicleCountsRepository(VehicleCountsRepositoryPort):
     def save(self, video_id: str, counts: list[FrameVehicleCounts]) -> None:
         self.saved_data[video_id] = counts
 
+    def exists(self, video_id: str) -> bool:
+        return video_id in self.saved_data
+
 
 @pytest.fixture
 def temp_frames_dir(tmp_path):

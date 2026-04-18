@@ -16,11 +16,14 @@ clean-targets:
   - "target"
   - "dbt_packages"
 
+vars:
+  datalake_path: "/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake"
+
 models:
   trafficlens_dbt:
-    stg:
+    silver:
       +materialized: external
       +file_format: parquet
-    marts:
+    gold:
       +materialized: external
       +file_format: parquet

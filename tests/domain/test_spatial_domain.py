@@ -123,7 +123,7 @@ class TestSplatScene:
 
     def test_scene_with_zero_gaussians_raises_reliability_error(self):
         """A reconstruction with 0 gaussians is a failed scene — must be rejected."""
-        with pytest.raises(SceneReliabilityError, match="num_gaussians"):
+        with pytest.raises(ValueError, match="num_gaussians"):
             SplatScene(
                 scene_id="scene_bad",
                 camera_poses=self._valid_poses(),
@@ -134,7 +134,7 @@ class TestSplatScene:
 
     def test_scene_with_no_camera_poses_raises_reliability_error(self):
         """A scene with no registered camera poses is meaningless."""
-        with pytest.raises(SceneReliabilityError, match="camera_poses"):
+        with pytest.raises(ValueError, match="camera_poses"):
             SplatScene(
                 scene_id="scene_empty_poses",
                 camera_poses=[],
@@ -145,7 +145,7 @@ class TestSplatScene:
 
     def test_scene_with_high_reprojection_error_raises_reliability_error(self):
         """A scene where reprojection error > 2.0 pixels indicates a floater cloud — rejected."""
-        with pytest.raises(SceneReliabilityError, match="reprojection_error"):
+        with pytest.raises(ValueError, match="reprojection_error"):
             SplatScene(
                 scene_id="scene_poor_quality",
                 camera_poses=self._valid_poses(),

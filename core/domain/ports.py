@@ -50,12 +50,20 @@ class SfMMapperPort(ABC):
     Port: takes a collection of frame image paths and produces
     a list of CameraPose objects (position + orientation per frame).
 
+    Optionally accepts GPS telemetry records to enable metric-scale reconstruction:
+    - Without GPS: arbitrary scale (suitable for visual-only use cases).
+    - With GPS: metric scale in meters (required for synthetic scenario injection).
+
     Concrete adapters: ColmapSfMAdapter (local), AwsRekonstructionAdapter (cloud).
     The application layer must never import COLMAP or any SfM library directly.
     """
 
     @abstractmethod
-    def map_poses(self, frame_paths: list[str]) -> list[CameraPose]:
+    def map_poses(
+        self,
+        frame_paths: list[str],
+        telemetry: list["TelemetryRecord"] | None = None,
+    ) -> list[CameraPose]:
         """
         Run Structure-from-Motion on a set of frames.
 

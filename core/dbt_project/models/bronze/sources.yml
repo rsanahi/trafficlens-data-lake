@@ -1,0 +1,22 @@
+version: 2
+
+sources:
+  - name: trafficlens_bronze
+    schema: main
+    loader: viofo_ocr
+    tables:
+      - name: telemetry
+        description: "Raw telemetry data from VIOFO dashcam"
+        # DuckDB generic file reader: read all CSVs in the folder
+        meta:
+          external_location: "read_csv_auto('{{ var('datalake_path') }}/datalake/bronze/telemetry/*.csv', filename=True, union_by_name=True)"
+
+      - name: detections
+        description: "Mock object detection data representing vehicles per frame"
+        meta:
+          external_location: "read_csv_auto('{{ var('datalake_path') }}/datalake/bronze/detections/*.csv', filename=True, union_by_name=True)"
+
+      - name: reconstruction_attempts
+        description: "Metadata of every COLMAP/3DGS reconstruction attempt (success or failure)"
+        meta:
+          external_location: "read_parquet('{{ var('datalake_path') }}/datalake/bronze/reconstruction_attempts/*.parquet', union_by_name=true)"

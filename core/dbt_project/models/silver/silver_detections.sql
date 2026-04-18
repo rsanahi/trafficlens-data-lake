@@ -1,5 +1,7 @@
 {{ config(
-    materialized='view'
+    materialized='incremental',
+    location='{{ var("datalake_path") }}/datalake/silver/detections.parquet',
+    unique_key='frame_id'
 ) }}
 
 /*

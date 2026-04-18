@@ -1,7 +1,7 @@
 
 {{ config(
     materialized='external',
-    location='/Users/anahiruiz/Documents/GitHub/trafficlens-data-lake/datalake/curated/fct_ml_training_catalog.parquet'
+    location='{{ var("datalake_path") }}/datalake/gold/fct_ml_training_catalog.parquet'
 ) }}
 
 /*
@@ -12,7 +12,7 @@
 */
 
 WITH silver_telemetry AS (
-    SELECT * FROM {{ ref('stg_telemetry') }}
+    SELECT * FROM {{ ref('silver_telemetry') }}
 ),
 
 candidates AS (
