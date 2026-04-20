@@ -1,0 +1,38 @@
+version: 2
+
+models:
+  - name: int_telemetry_10s_windows
+    description: >
+      Intermediate model. Joins silver_telemetry and silver_detections at the frame grain,
+      computes per-frame delta_speed (absolute speed change from previous frame within the
+      same video), then aggregates into non-overlapping 10-second time buckets.
+      One row per (video_id, window_start). Downstream consumer: fct_traffic_windows.
+    columns:
+      - name: video_id
+        description: "Identifier of the source dashcam video. Derived from the source CSV filename."
+        tests:
+          - not_null
+
+      - name: window_start
+        description: >
+          The floored timestamp of the 10-second bucket (DuckDB time_bucket at 10s interval).
+          This is the primary temporal grain of the anomaly detection feature.
+        tests:
+          - not_null
+
+      - name: avg_speed_kmh
+        description: "Average speed in km/h across all frames within the 10-second window."
+
+      - name: avg_delta_speed
+        description: >
+          Average absolute speed change (km/h) between consecutive frames within the window.
+          Computed as ABS(speed_kmh - LAG(speed_kmh)). A high value signals abrupt
+          acceleration or braking events — a key anomaly signal.
+
+      - name: avg_total_vehicles
+        description: >
+          Average total vehicle count (cars + motorcycles) per frame within the window.
+          A spike signals unusual traffic density.
+
+      - name: frame_count
+        description: "Number of frames that contributed to this 10-second window."
