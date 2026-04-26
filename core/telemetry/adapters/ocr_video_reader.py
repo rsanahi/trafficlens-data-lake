@@ -11,9 +11,6 @@ import os
 import re
 from typing import Optional
 
-import cv2
-import pytesseract
-
 from core.telemetry.domain.ports.i_telemetry_ports import VideoReaderPort
 from core.telemetry.domain.model import TelemetryRecord, VideoMetadata
 
@@ -34,6 +31,8 @@ class OcrVideoReader(VideoReaderPort):
         self._frames_base_dir = frames_base_dir
 
     def read_records(self, metadata: VideoMetadata) -> list[TelemetryRecord]:
+        import cv2
+
         if not os.path.exists(metadata.path):
             return []
 
@@ -90,12 +89,17 @@ class OcrVideoReader(VideoReaderPort):
         return os.path.join(self._frames_base_dir, base_name)
 
     def _save_frame(self, frame, frame_idx: int, frames_dir: str) -> str:
+        import cv2
+
         frame_name = f"frame_{frame_idx:06d}.jpg"
         frame_path = os.path.join(frames_dir, frame_name)
         cv2.imwrite(frame_path, frame, [int(cv2.IMWRITE_JPEG_QUALITY), 80])
         return frame_name
 
     def _extract_record(self, frame, frame_filename: str) -> Optional[TelemetryRecord]:
+        import cv2
+        import pytesseract
+
         h, w = frame.shape[:2]
         roi = frame[h - int(h * 0.08):h, 0:w]
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
