@@ -46,10 +46,7 @@ class IsolationForestAdapter(AnomalyDetectorPort):
         self._random_state = random_state
         self._threshold = threshold
 
-    def detect_anomalies(self, windows: list[TrafficWindow]) -> list[AnomalyScore]:
-        if not windows:
-            return []
-
+    def _detect_anomalies(self, windows: list[TrafficWindow]) -> list[AnomalyScore]:
         feature_matrix = np.array(
             [
                 [w.avg_speed_kmh, w.avg_delta_speed, w.avg_total_vehicles]

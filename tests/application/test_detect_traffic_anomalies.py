@@ -38,12 +38,16 @@ class InMemoryAnomalyDetector(AnomalyDetectorPort):
     Pure Fake implementation of AnomalyDetectorPort for use-case tests.
 
     The Fake is completely controlled by the test: callers supply a list of
-    AnomalyScore objects at construction time (or via set_results) and the
-    Fake returns them verbatim when detect_anomalies() is called.
+    AnomalyScore objects at construction time and the Fake returns them
+    verbatim when detect_anomalies() is called.
 
     There are NO threshold comparisons, NO business rules, and NO knowledge
     of what constitutes an anomaly. Classification decisions belong to the
     domain and infrastructure layers — not to test doubles.
+
+    Implements `_detect_anomalies` (the protected hook), NOT `detect_anomalies`.
+    The base class template method enforces all port contracts (cardinality,
+    ordering) on whatever this fake returns.
 
     Usage:
         detector = InMemoryAnomalyDetector(results=[score_a, score_b])
@@ -58,11 +62,7 @@ class InMemoryAnomalyDetector(AnomalyDetectorPort):
     def __init__(self, results: list[AnomalyScore] | None = None) -> None:
         self._results: list[AnomalyScore] = results if results is not None else []
 
-    def set_results(self, results: list[AnomalyScore]) -> None:
-        """Replace the pre-configured results. Useful for multi-step test setups."""
-        self._results = results
-
-    def detect_anomalies(self, windows: list[TrafficWindow]) -> list[AnomalyScore]:
+    def _detect_anomalies(self, windows: list[TrafficWindow]) -> list[AnomalyScore]:
         return list(self._results)
 
 
@@ -359,6 +359,72 @@ class TestDetectTrafficAnomalies:
 
         assert scores[0].contamination == InMemoryAnomalyDetector.CONTAMINATION
 
+    # --- Output ordering ---
+
+    def test_output_preserves_input_order(self):
+        """
+        Contract: output[i] must correspond to input[i] by (video_id, window_start).
+
+        The port's base class enforces this. A correctly ordered adapter must pass
+        through unchanged — this test confirms the happy path for a well-behaved
+        implementation.
+
+        Three windows with distinct (video_id, window_start) pairs are supplied in
+        a deliberate sequence. The Fake returns scores in the same order. The use
+        case result must match the input sequence position-for-position.
+        """
+        windows = [
+            _window(video_id="alpha", offset_seconds=0),
+            _window(video_id="beta",  offset_seconds=10),
+            _window(video_id="gamma", offset_seconds=20),
+        ]
+        scores_in_order = [
+            _score(video_id="alpha", offset_seconds=0),
+            _score(video_id="beta",  offset_seconds=10),
+            _score(video_id="gamma", offset_seconds=20),
+        ]
+        detector = InMemoryAnomalyDetector(results=scores_in_order)
+        use_case = DetectTrafficAnomalies(detector=detector)
+
+        scores = use_case.detect(windows)
+
+        for i, (win, score) in enumerate(zip(windows, scores)):
+            assert score.video_id == win.video_id, (
+                f"Position {i}: expected video_id={win.video_id!r}, got {score.video_id!r}"
+            )
+            assert score.window_start == win.window_start, (
+                f"Position {i}: expected window_start={win.window_start!r}, "
+                f"got {score.window_start!r}"
+            )
+
+    def test_misordered_adapter_output_raises_contract_violation(self):
+        """
+        Contract: output[i] must correspond to input[i] by (video_id, window_start).
+
+        The port's base class must detect and reject adapters that return scores in
+        a different order than the input windows, raising ValueError.
+
+        This test deliberately configures the Fake to return scores in REVERSED order
+        relative to the input windows. The port enforcement must catch the mismatch
+        and raise before the use case can return a silently wrong result.
+        """
+        windows = [
+            _window(video_id="first",  offset_seconds=0),
+            _window(video_id="second", offset_seconds=10),
+            _window(video_id="third",  offset_seconds=20),
+        ]
+        # Scores returned in reversed order — first adapter output is for "third" window
+        scores_reversed = [
+            _score(video_id="third",  offset_seconds=20),
+            _score(video_id="second", offset_seconds=10),
+            _score(video_id="first",  offset_seconds=0),
+        ]
+        detector = InMemoryAnomalyDetector(results=scores_reversed)
+        use_case = DetectTrafficAnomalies(detector=detector)
+
+        with pytest.raises(ValueError, match="order"):
+            use_case.detect(windows)
+
     # --- Port isolation ---
 
     def test_use_case_does_not_import_sklearn(self):
@@ -395,38 +461,37 @@ class TestDetectTrafficAnomalies:
 # ---------------------------------------------------------------------------
 # TrafficWindow Invariant Tests
 #
-# Rule: invariants are proven through the use case, not by constructing domain
-# objects in isolation. Each test builds an invalid TrafficWindow as part of
-# the arrange phase, then calls use_case.detect() and expects ValueError.
+# These tests verify that TrafficWindow's domain invariants are enforced at
+# construction time. TrafficWindow.__post_init__ raises ValueError immediately
+# on invalid input — before any use case could consume the object. Testing the
+# invariant directly against the domain model is therefore the correct and
+# honest instrument. The use case is not involved.
+#
+# Contrast with TestDetectTrafficAnomalies, which verifies the use case's
+# orchestration contract (port routing, cardinality, identity, pass-through).
+# That class owns use case behaviour. This class owns domain model correctness.
 # ---------------------------------------------------------------------------
 
 class TestTrafficWindowInvariants:
     """
     Verify that TrafficWindow's domain invariants are enforced at construction
-    time and that the violation surfaces as a ValueError when the use case
-    attempts to consume an invalid window.
+    time via ValueError with a message identifying the violated field.
 
     One test per invariant. Each test follows the same pattern:
-        1. Attempt to build a TrafficWindow that violates exactly one invariant.
-        2. Wrap the construction + detect call in pytest.raises(ValueError).
+        1. Attempt to construct a TrafficWindow that violates exactly one invariant.
+        2. Assert that ValueError is raised and its message matches the field name.
         3. Assert nothing further — the raised exception IS the contract.
     """
-
-    def _make_use_case(self) -> DetectTrafficAnomalies:
-        """Return a use case wired with an empty-result fake detector."""
-        return DetectTrafficAnomalies(detector=InMemoryAnomalyDetector(results=[]))
 
     # --- video_id ---
 
     def test_blank_video_id_raises_value_error(self):
         """
         Invariant: video_id must not be blank or whitespace-only.
-        A window with video_id="" is meaningless — it cannot be traced to a source.
+        A window with video_id="   " is meaningless — it cannot be traced to a source.
         """
-        use_case = self._make_use_case()
-
         with pytest.raises(ValueError, match="video_id"):
-            invalid_window = TrafficWindow(
+            TrafficWindow(
                 video_id="   ",
                 window_start=BASE_TIME,
                 avg_speed_kmh=40.0,
@@ -434,7 +499,6 @@ class TestTrafficWindowInvariants:
                 avg_total_vehicles=5.0,
                 frame_count=10,
             )
-            use_case.detect([invalid_window])
 
     # --- avg_speed_kmh ---
 
@@ -443,10 +507,8 @@ class TestTrafficWindowInvariants:
         Invariant: avg_speed_kmh >= 0.
         Physical speed is a magnitude — a negative value signals a data pipeline error.
         """
-        use_case = self._make_use_case()
-
         with pytest.raises(ValueError, match="avg_speed_kmh"):
-            invalid_window = TrafficWindow(
+            TrafficWindow(
                 video_id="trip_001",
                 window_start=BASE_TIME,
                 avg_speed_kmh=-1.0,
@@ -454,7 +516,6 @@ class TestTrafficWindowInvariants:
                 avg_total_vehicles=5.0,
                 frame_count=10,
             )
-            use_case.detect([invalid_window])
 
     # --- avg_delta_speed ---
 
@@ -464,10 +525,8 @@ class TestTrafficWindowInvariants:
         avg_delta_speed is the mean *absolute* speed change — it is physically
         impossible for this to be negative.
         """
-        use_case = self._make_use_case()
-
         with pytest.raises(ValueError, match="avg_delta_speed"):
-            invalid_window = TrafficWindow(
+            TrafficWindow(
                 video_id="trip_001",
                 window_start=BASE_TIME,
                 avg_speed_kmh=40.0,
@@ -475,7 +534,6 @@ class TestTrafficWindowInvariants:
                 avg_total_vehicles=5.0,
                 frame_count=10,
             )
-            use_case.detect([invalid_window])
 
     # --- avg_total_vehicles ---
 
@@ -484,10 +542,8 @@ class TestTrafficWindowInvariants:
         Invariant: avg_total_vehicles >= 0.
         A vehicle count cannot be negative — it signals a corrupted aggregation.
         """
-        use_case = self._make_use_case()
-
         with pytest.raises(ValueError, match="avg_total_vehicles"):
-            invalid_window = TrafficWindow(
+            TrafficWindow(
                 video_id="trip_001",
                 window_start=BASE_TIME,
                 avg_speed_kmh=40.0,
@@ -495,7 +551,6 @@ class TestTrafficWindowInvariants:
                 avg_total_vehicles=-1.0,
                 frame_count=10,
             )
-            use_case.detect([invalid_window])
 
     # --- frame_count ---
 
@@ -505,10 +560,8 @@ class TestTrafficWindowInvariants:
         A window with no frames carries no telemetry and has no meaning in the domain.
         frame_count=0 indicates a broken aggregation in the dbt Gold Layer.
         """
-        use_case = self._make_use_case()
-
         with pytest.raises(ValueError, match="frame_count"):
-            invalid_window = TrafficWindow(
+            TrafficWindow(
                 video_id="trip_001",
                 window_start=BASE_TIME,
                 avg_speed_kmh=40.0,
@@ -516,7 +569,6 @@ class TestTrafficWindowInvariants:
                 avg_total_vehicles=5.0,
                 frame_count=0,
             )
-            use_case.detect([invalid_window])
 
     # --- window_start timezone-awareness ---
 
@@ -526,10 +578,8 @@ class TestTrafficWindowInvariants:
         Naive datetimes are ambiguous when dashcam footage spans timezones or DST
         boundaries. The Gold Layer must always provide UTC-stamped windows.
         """
-        use_case = self._make_use_case()
-
         with pytest.raises(ValueError, match="window_start"):
-            invalid_window = TrafficWindow(
+            TrafficWindow(
                 video_id="trip_001",
                 window_start=datetime(2024, 1, 15, 8, 0, 0),  # no tzinfo → naive
                 avg_speed_kmh=40.0,
@@ -537,4 +587,3 @@ class TestTrafficWindowInvariants:
                 avg_total_vehicles=5.0,
                 frame_count=10,
             )
-            use_case.detect([invalid_window])
