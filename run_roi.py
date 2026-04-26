@@ -14,11 +14,11 @@ from pathlib import Path
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from core.domain.telemetry_record import TelemetryRecord
-from core.domain.spatial_reconstruction import InferenceContract
-from core.infrastructure.colmap_sfm_adapter import ColmapSfMAdapter
-from core.infrastructure.nerfstudio_splatfacto_adapter import NerfstudioSplatfactoAdapter
-from core.application.reconstruct_scene import ReconstructSceneUseCase
+from core.telemetry.domain.model import TelemetryRecord
+from core.spatial_reconstruction.domain.model import InferenceContract
+from core.spatial_reconstruction.adapters.colmap_sfm_adapter import ColmapSfMAdapter
+from core.spatial_reconstruction.adapters.nerfstudio_splatfacto_adapter import NerfstudioSplatfactoAdapter
+from core.spatial_reconstruction.application.reconstruct_scene_use_case import ReconstructSceneUseCase
 
 # Tus coordenadas de la región de interés (ROI)
 ROI_POLYGON = [

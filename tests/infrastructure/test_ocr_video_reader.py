@@ -3,7 +3,7 @@ Infrastructure tests: OcrVideoReader caption parsing business rules.
 Tests run against the parsing logic only — no real video, no OpenCV I/O.
 """
 import pytest
-from core.infrastructure.ocr_video_reader import OcrVideoReader
+from core.telemetry.adapters.ocr_video_reader import OcrVideoReader
 
 
 @pytest.fixture()

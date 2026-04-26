@@ -12,8 +12,8 @@ import math
 import sqlite3
 import pytest
 
-from core.domain.telemetry_record import TelemetryRecord
-from core.infrastructure.colmap_sfm_adapter import ColmapSfMAdapter
+from core.telemetry.domain.model import TelemetryRecord
+from core.spatial_reconstruction.adapters.colmap_sfm_adapter import ColmapSfMAdapter
 
 
 # ---------------------------------------------------------------------------

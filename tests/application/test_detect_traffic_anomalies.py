@@ -24,10 +24,9 @@ Scenarios covered:
 import pytest
 from datetime import datetime, timezone
 
-from core.domain.traffic_window import TrafficWindow
-from core.domain.anomaly_score import AnomalyScore
-from core.domain.ports import AnomalyDetectorPort
-from core.application.detect_traffic_anomalies import DetectTrafficAnomalies
+from core.traffic_analysis.domain.model import TrafficWindow, AnomalyScore
+from core.traffic_analysis.domain.ports.i_traffic_analysis_ports import AnomalyDetectorPort
+from core.traffic_analysis.application.detect_traffic_anomalies_use_case import DetectTrafficAnomalies
 
 
 # ---------------------------------------------------------------------------
@@ -98,18 +97,25 @@ def _window(
 def _score(
     video_id: str = "trip_001",
     offset_seconds: int = 0,
-    is_anomaly: bool = False,
     anomaly_score: float = 0.1,
     contamination: float = InMemoryAnomalyDetector.CONTAMINATION,
 ) -> AnomalyScore:
-    """Build an AnomalyScore with sensible defaults."""
+    """
+    Build an AnomalyScore with sensible defaults.
+
+    `is_anomaly` is derived by AnomalyScore from anomaly_score at construction
+    time (score < ANOMALY_THRESHOLD = -0.1). It is NOT a parameter here.
+
+    Convention for callers:
+    - Pass anomaly_score=-0.3 to get is_anomaly=True  (braking / density anomaly)
+    - Pass anomaly_score=0.1  to get is_anomaly=False (normal flow)
+    """
     return AnomalyScore(
         video_id=video_id,
         window_start=datetime(
             2024, 1, 15, 8, 0, offset_seconds, tzinfo=timezone.utc
         ),
         anomaly_score=anomaly_score,
-        is_anomaly=is_anomaly,
         contamination=contamination,
     )
 
@@ -137,8 +143,7 @@ class TestDetectTrafficAnomalies:
         )
         expected_score = _score(
             video_id="trip_001",
-            is_anomaly=True,
-            anomaly_score=-0.3,
+            anomaly_score=-0.3,   # -0.3 < -0.1 → is_anomaly=True (derived)
         )
         detector = InMemoryAnomalyDetector(results=[expected_score])
         use_case = DetectTrafficAnomalies(detector=detector)
@@ -168,8 +173,7 @@ class TestDetectTrafficAnomalies:
         )
         expected_score = _score(
             video_id="trip_002",
-            is_anomaly=False,
-            anomaly_score=0.1,
+            anomaly_score=0.1,    # 0.1 >= -0.1 → is_anomaly=False (derived)
         )
         detector = InMemoryAnomalyDetector(results=[expected_score])
         use_case = DetectTrafficAnomalies(detector=detector)
@@ -199,8 +203,7 @@ class TestDetectTrafficAnomalies:
         )
         expected_score = _score(
             video_id="trip_003",
-            is_anomaly=True,
-            anomaly_score=-0.3,
+            anomaly_score=-0.3,   # -0.3 < -0.1 → is_anomaly=True (derived)
         )
         detector = InMemoryAnomalyDetector(results=[expected_score])
         use_case = DetectTrafficAnomalies(detector=detector)
@@ -228,7 +231,6 @@ class TestDetectTrafficAnomalies:
         )
         expected_score = _score(
             video_id="trip_004",
-            is_anomaly=False,
             anomaly_score=0.1,
         )
         detector = InMemoryAnomalyDetector(results=[expected_score])
@@ -328,10 +330,10 @@ class TestDetectTrafficAnomalies:
             _window(video_id="trip_mix", offset_seconds=30, avg_delta_speed=0.0,  avg_total_vehicles=0.0),
         ]
         scores_preset = [
-            _score(video_id="trip_mix", offset_seconds=0,  is_anomaly=False, anomaly_score=0.1),
-            _score(video_id="trip_mix", offset_seconds=10, is_anomaly=True,  anomaly_score=-0.3),
-            _score(video_id="trip_mix", offset_seconds=20, is_anomaly=True,  anomaly_score=-0.3),
-            _score(video_id="trip_mix", offset_seconds=30, is_anomaly=False, anomaly_score=0.1),
+            _score(video_id="trip_mix", offset_seconds=0,  anomaly_score=0.1),
+            _score(video_id="trip_mix", offset_seconds=10, anomaly_score=-0.3),
+            _score(video_id="trip_mix", offset_seconds=20, anomaly_score=-0.3),
+            _score(video_id="trip_mix", offset_seconds=30, anomaly_score=0.1),
         ]
         detector = InMemoryAnomalyDetector(results=scores_preset)
         use_case = DetectTrafficAnomalies(detector=detector)
@@ -369,7 +371,7 @@ class TestDetectTrafficAnomalies:
 
         source_path = (
             Path(__file__).resolve().parents[2]
-            / "core" / "application" / "detect_traffic_anomalies.py"
+            / "core" / "traffic_analysis" / "application" / "detect_traffic_anomalies_use_case.py"
         )
         tree = ast.parse(source_path.read_text())
 

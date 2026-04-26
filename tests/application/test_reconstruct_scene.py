@@ -13,15 +13,20 @@ Use Case flow:
 """
 import pytest
 
-from core.domain.spatial_reconstruction import (
+from core.spatial_reconstruction.domain.model import (
     CameraPose,
     SplatScene,
     InferenceContract,
+)
+from core.spatial_reconstruction.domain.exceptions.domain_exceptions import (
     SceneReliabilityError,
     ContractViolationError,
 )
-from core.domain.ports import SfMMapperPort, GaussianTrainerPort
-from core.application.reconstruct_scene import ReconstructSceneUseCase
+from core.spatial_reconstruction.domain.ports.i_spatial_reconstruction_ports import (
+    SfMMapperPort,
+    GaussianTrainerPort,
+)
+from core.spatial_reconstruction.application.reconstruct_scene_use_case import ReconstructSceneUseCase
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +140,7 @@ class TestReconstructSceneUseCase:
         assert mapper.called_with_telemetry is None
         
         # Test 2: With telemetry
-        from core.domain.telemetry_record import TelemetryRecord
+        from core.telemetry.domain.model import TelemetryRecord
         fake_telemetry = [TelemetryRecord(raw_text="fake", latitude=0.0, longitude=0.0)]
         use_case.execute(frame_paths=frame_paths, scene_id="scene_003", telemetry=fake_telemetry)
         assert mapper.called_with_telemetry == fake_telemetry

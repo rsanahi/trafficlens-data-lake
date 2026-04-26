@@ -13,8 +13,8 @@ Instead we test the adapter's critical owned responsibilities:
 import math
 import pytest
 
-from core.domain.spatial_reconstruction import CameraPose
-from core.infrastructure.nerfstudio_splatfacto_adapter import (
+from core.spatial_reconstruction.domain.model import CameraPose
+from core.spatial_reconstruction.adapters.nerfstudio_splatfacto_adapter import (
     NerfstudioSplatfactoAdapter,
     NerfstudioTrainingError,
 )

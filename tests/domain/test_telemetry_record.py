@@ -5,8 +5,7 @@ Names reflect the domain language, not the implementation.
 import pytest
 from pydantic import ValidationError
 
-from core.domain.telemetry_record import TelemetryRecord
-from core.domain.video_metadata import VideoMetadata
+from core.telemetry.domain.model import TelemetryRecord, VideoMetadata
 
 
 class TestTelemetryRecord:

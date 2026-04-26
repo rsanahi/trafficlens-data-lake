@@ -27,10 +27,10 @@ type: project
 
 - Value objects: `@dataclass(frozen=True)` for simple data carriers (TrafficWindow, AnomalyScore, FrameVehicleCounts).
 - Rich entities: Pydantic `BaseModel` with validators (CameraPose, SplatScene) when invariants need enforcement.
-- All ports live in a single file: `core/domain/ports.py`.
-- One use case per file in `core/application/`.
-- Adapters in `core/infrastructure/`. Application layer must NEVER import infrastructure libraries.
-- Clean Architecture: domain → application → infrastructure (no reverse imports).
+- Canonical structure: `core/{subdominio}/domain/model.py`, `domain/ports/`, `application/{use_case}_use_case.py`, `adapters/`.
+- Old flat paths (`core/domain/`, `core/application/`, `core/infrastructure/`) are dead tombstones — they raise ImportError on import. Never use them.
+- All imports MUST use canonical per-subdomain paths.
+- Clean Architecture: domain → application → adapters (no reverse imports).
 
 ## Test Conventions
 

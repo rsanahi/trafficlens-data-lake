@@ -10,10 +10,12 @@ Design decisions (non-negotiable):
 import math
 import pytest
 
-from core.domain.spatial_reconstruction import (
+from core.spatial_reconstruction.domain.model import (
     CameraPose,
     SplatScene,
     InferenceContract,
+)
+from core.spatial_reconstruction.domain.exceptions.domain_exceptions import (
     SceneReliabilityError,
     ContractViolationError,
 )

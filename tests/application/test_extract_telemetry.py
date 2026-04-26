@@ -4,10 +4,9 @@ Uses in-memory fakes — no real files, no OpenCV, no Tesseract.
 """
 import pytest
 
-from core.domain.telemetry_record import TelemetryRecord
-from core.domain.video_metadata import VideoMetadata
-from core.domain.ports import VideoReaderPort, TelemetryRepositoryPort
-from core.application.extract_telemetry import ExtractTelemetryUseCase
+from core.telemetry.domain.model import TelemetryRecord, VideoMetadata
+from core.telemetry.domain.ports.i_telemetry_ports import VideoReaderPort, TelemetryRepositoryPort
+from core.telemetry.application.extract_telemetry_use_case import ExtractTelemetryUseCase
 
 
 # --- In-memory fakes (no infrastructure) ---
