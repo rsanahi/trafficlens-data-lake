@@ -28,3 +28,7 @@ datalake/
 
 # Claude Agent System
 .claude/agents/
+.claude/agent-memory/
+.claude/projects/
+.claude/skills/
+.agents/

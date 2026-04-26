@@ -46,7 +46,7 @@ class SfMMapperPort(ABC):
     - Without GPS: arbitrary scale (suitable for visual-only use cases).
     - With GPS: metric scale in meters (required for synthetic scenario injection).
 
-    Concrete adapters: ColmapSfMAdapter (local), AwsRekonstructionAdapter (cloud).
+    Concrete adapters live in core/spatial_reconstruction/adapters/ and must implement this port.
     The application layer must never import COLMAP or any SfM library directly.
     """
 
@@ -75,7 +75,7 @@ class GaussianTrainerPort(ABC):
     Port: takes a set of CameraPose objects and trains a 3D Gaussian Splatting model,
     returning a validated SplatScene entity.
 
-    Concrete adapters: NerfstudioSplatfactoAdapter (local MPS), AwsSageMakerAdapter (cloud).
+    Concrete adapters live in core/spatial_reconstruction/adapters/ and must implement this port.
     The application layer must never import nerfstudio or any training library directly.
     """
 
