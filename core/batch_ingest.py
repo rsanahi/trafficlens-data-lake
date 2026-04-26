@@ -8,13 +8,13 @@ import glob
 import os
 import subprocess
 
-from core.application.extract_telemetry import ExtractTelemetryUseCase
-from core.application.extract_vehicle_counts import ExtractVehicleCountsUseCase
-from core.domain.video_metadata import VideoMetadata
-from core.infrastructure.csv_telemetry_repository import CsvTelemetryRepository
-from core.infrastructure.csv_detection_repository import CsvDetectionRepository
-from core.infrastructure.ocr_video_reader import OcrVideoReader
-from core.infrastructure.local_yolo_detector import LocalYoloDetector
+from core.telemetry.application.extract_telemetry_use_case import ExtractTelemetryUseCase
+from core.vehicle_detection.application.extract_vehicle_counts_use_case import ExtractVehicleCountsUseCase
+from core.telemetry.domain.model import VideoMetadata
+from core.telemetry.adapters.csv_telemetry_repository import CsvTelemetryRepository
+from core.vehicle_detection.adapters.csv_detection_repository import CsvDetectionRepository
+from core.telemetry.adapters.ocr_video_reader import OcrVideoReader
+from core.vehicle_detection.adapters.local_yolo_detector import LocalYoloDetector
 
 
 def _discover_videos(input_dir: str) -> list[str]:

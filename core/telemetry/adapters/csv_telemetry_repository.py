@@ -1,14 +1,15 @@
 """
-Infrastructure adapter: implements TelemetryRepositoryPort using CSV and JSON files.
+Infrastructure adapter: implements TelemetryRepositoryPort using CSV files.
+
+Canonical location: core/telemetry/adapters/csv_telemetry_repository.py
 """
 from __future__ import annotations
 
 import csv
-import json
 import os
 
-from core.domain.ports import TelemetryRepositoryPort
-from core.domain.telemetry_record import TelemetryRecord
+from core.telemetry.domain.ports.i_telemetry_ports import TelemetryRepositoryPort
+from core.telemetry.domain.model import TelemetryRecord
 
 
 class CsvTelemetryRepository(TelemetryRepositoryPort):

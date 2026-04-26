@@ -1,9 +1,12 @@
 import pytest
 import os
 from pathlib import Path
-from core.domain.ports import VehicleDetectorPort, VehicleCountsRepositoryPort
-from core.domain.vehicle_counts import FrameVehicleCounts
-from core.application.extract_vehicle_counts import ExtractVehicleCountsUseCase
+from core.vehicle_detection.domain.ports.i_vehicle_detection_ports import (
+    VehicleDetectorPort,
+    VehicleCountsRepositoryPort,
+)
+from core.vehicle_detection.domain.model import FrameVehicleCounts
+from core.vehicle_detection.application.extract_vehicle_counts_use_case import ExtractVehicleCountsUseCase
 
 
 class FakeVehicleDetector(VehicleDetectorPort):

@@ -24,6 +24,8 @@ models:
     silver:
       +materialized: external
       +file_format: parquet
+    int:
+      +materialized: table
     gold:
       +materialized: external
       +file_format: parquet

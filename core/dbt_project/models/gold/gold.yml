@@ -45,3 +45,35 @@ models:
         description: "Total motorcycles detected."
       - name: total_vehicles
         description: "Calculated sum of all detected vehicles in this frame."
+
+  - name: fct_traffic_windows
+    description: >
+      Gold Layer feature store for traffic anomaly detection. Contains pre-aggregated
+      10-second temporal windows per video. Each row represents one window and carries
+      the three feature signals consumed by the IsolationForest anomaly detector:
+      avg_speed_kmh, avg_delta_speed, and avg_total_vehicles.
+      Materialized as external Parquet at datalake/gold/fct_traffic_windows.parquet.
+    columns:
+      - name: video_id
+        description: "Identifier of the source dashcam video."
+        tests:
+          - not_null
+
+      - name: window_start
+        description: "Start timestamp of the 10-second aggregation window."
+        tests:
+          - not_null
+
+      - name: avg_speed_kmh
+        description: "Average speed (km/h) across all frames in the window."
+
+      - name: avg_delta_speed
+        description: >
+          Average absolute speed delta between consecutive frames in the window.
+          Primary braking/acceleration signal for anomaly scoring.
+
+      - name: avg_total_vehicles
+        description: "Average total vehicle count per frame in the window. Density signal."
+
+      - name: frame_count
+        description: "Number of frames that contributed to this window."
