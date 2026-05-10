@@ -27,4 +27,5 @@ datalake/
 *.pt
 
 # Claude Agent System
-.claude/agents/
+.claude/
+.agents/
