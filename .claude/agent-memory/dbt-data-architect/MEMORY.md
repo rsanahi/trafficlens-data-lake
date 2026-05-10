@@ -1,2 +1,0 @@
-- [User Profile](user_profile.md) — data scientist, dueña de TrafficLens, enfocada en demostrar habilidades DS/DE
-- [Project Overview](project_trafficlens.md) — pipeline completo: dashcam VIOFO -> OCR -> YOLO -> dbt/DuckDB medallion -> Streamlit
